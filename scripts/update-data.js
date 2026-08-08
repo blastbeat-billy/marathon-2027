@@ -30,7 +30,13 @@ function parseAmount(str) {
 // ---- Part 1: scrape the fundraising page ----
 async function getFundraising() {
   const res = await fetch(FUNDRAISING_URL, {
-    headers: { "User-Agent": "Mozilla/5.0 (fundraising totals updater)" },
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Accept-Language": "en-GB,en;q=0.9",
+      "Referer": "https://www.peoplesfundraising.com/",
+    },
   });
   if (!res.ok) throw new Error(`Fundraising page returned ${res.status}`);
   const html = await res.text();
