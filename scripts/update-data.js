@@ -127,8 +127,14 @@ async function main() {
     /* first run - no file yet */
   }
 
-  const fundraising = await getFundraising();
-  console.log(`Fundraising total: £${fundraising.totalRaised}`);
+  let fundraising = null;
+  try {
+    fundraising = await getFundraising();
+    console.log(`Fundraising total: £${fundraising.totalRaised}`);
+  } catch (err) {
+    console.error(`Fundraising update failed (keeping previous figure): ${err.message}`);
+    fundraising = previous.fundraising ?? null;
+  }
 
   let runs = null;
   try {
@@ -143,7 +149,7 @@ async function main() {
 
   const data = {
     lastUpdated: new Date().toISOString().slice(0, 10),
-    raisedAmount: fundraising.totalRaised,
+    raisedAmount: fundraising ? fundraising.totalRaised : (previous.raisedAmount ?? 0),
     fundraising,
     runs: runs ?? previous.runs ?? [],
   };
