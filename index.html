@@ -723,14 +723,14 @@ function renderMoneyMarks(){
     "Race date: " + fmtDateShort(DATA.marathonDate) + (DATA.marathonDateConfirmed ? "" : " (unconfirmed)");
 
   document.getElementById('donateBtn').href = DATA.donateUrl;
-  document.getElementById('donateBtn').addEventListener('click', function(e){
+  document.getElementById('donateBtn').onclick = function(e){
     e.preventDefault();
     const targetUrl = this.href;
     burstConfetti(this);
     setTimeout(function(){
       window.location.href = targetUrl;
     }, 1600);
-  });
+  };
   document.getElementById('lastUpdated').textContent = "Last updated " + fmtDateShort(DATA.lastUpdated);
 
   renderMoneyMarks();
@@ -740,7 +740,7 @@ function renderMoneyMarks(){
   document.getElementById('moneyFill').style.width = raisedPct + "%";
 
   const shareBtn = document.getElementById('shareBtn');
-  shareBtn.addEventListener('click', function(){
+  shareBtn.onclick = function(){
     const shareData = {
       title: document.title,
       text: "I'm running the 2027 London Marathon for my kids' school, follow my training here:",
@@ -754,7 +754,7 @@ function renderMoneyMarks(){
         setTimeout(function(){ shareBtn.innerHTML = '<img src="https://unpkg.com/lucide-static@latest/icons/share-2.svg" alt="" width="16" height="16"> Share'; }, 2000);
       });
     }
-  });
+  };
 
   const totalMiles = DATA.runs.reduce((sum,r)=> sum + r.distanceM/METERS_PER_MILE, 0);
   const longestMiles = DATA.runs.length ? Math.max(...DATA.runs.map(r=>r.distanceM/METERS_PER_MILE)) : 0;
@@ -815,17 +815,20 @@ function renderMoneyMarks(){
       '<div class="predict-detail">Extrapolated from a '+longestRunMiles.toFixed(1)+' mile run at '+paceStr(longestRunPaceSec)+'. This is a wide early estimate and will narrow as the long runs get longer, goal pace is '+paceStr((DATA.goalTimeMinutes*60)/26.2)+' for '+timeStr(DATA.goalTimeMinutes)+'.</div>';
   }
 
-  // --- Load live numbers saved by the GitHub updater ---
-  fetch("data.json?v=" + Date.now())
-    .then(function (r) { return r.json(); })
-    .then(function (j) {
-      if (typeof j.raisedAmount === "number") DATA.raisedAmount = j.raisedAmount;
-      if (Array.isArray(j.runs) && j.runs.length) DATA.runs = j.runs;
-      if (j.lastUpdated) DATA.lastUpdated = j.lastUpdated;
-      render();
-      renderMoneyMarks();
-    })
-    .catch(function () { /* keep manual DATA if data.json missing */ });
+  // --- Load live numbers saved by the GitHub updater (runs once only) ---
+  if (!window.__liveDataLoaded) {
+    window.__liveDataLoaded = true;
+    fetch("data.json?v=" + Date.now())
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (typeof j.raisedAmount === "number") DATA.raisedAmount = j.raisedAmount;
+        if (Array.isArray(j.runs) && j.runs.length) DATA.runs = j.runs;
+        if (j.lastUpdated) DATA.lastUpdated = j.lastUpdated;
+        render();
+        renderMoneyMarks();
+      })
+      .catch(function () { /* keep manual DATA if data.json missing */ });
+  }
 })();
 </script>
 
