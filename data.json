@@ -7,5 +7,31 @@
     "giftAid": 27.5,
     "supporters": 1
   },
-  "runs": []
+  "runs": [
+    {
+      "date": "2026-08-01",
+      "distanceM": 4935,
+      "movingTimeS": 1671
+    },
+    {
+      "date": "2026-08-02",
+      "distanceM": 4319,
+      "movingTimeS": 1657
+    },
+    {
+      "date": "2026-08-04",
+      "distanceM": 4565,
+      "movingTimeS": 1696
+    },
+    {
+      "date": "2026-08-07",
+      "distanceM": 5573,
+      "movingTimeS": 2152
+    },
+    {
+      "date": "2026-08-08",
+      "distanceM": 6949,
+      "movingTimeS": 2642
+    }
+  ]
 }
