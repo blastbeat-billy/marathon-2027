@@ -1,0 +1,31 @@
+<!-- ==============================================================
+  COPY THIS INTO YOUR WEBSITE
+  Put the <div> wherever you want the totals to appear on the page.
+  Put the <script> just before the closing </body> tag.
+  Style the div however you like - the ids are what matter.
+=============================================================== -->
+
+<div class="live-totals">
+  <strong id="fundraising-total">&pound;&hellip;</strong> raised
+  &middot;
+  <strong id="miles-total">&hellip;</strong> miles run
+</div>
+
+<script>
+  fetch("/data.json")
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (d.fundraising) {
+        document.getElementById("fundraising-total").textContent =
+          "£" + d.fundraising.totalRaised.toLocaleString("en-GB", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          });
+      }
+      if (d.strava) {
+        document.getElementById("miles-total").textContent =
+          d.strava.totalMiles.toLocaleString("en-GB");
+      }
+    })
+    .catch(function () { /* leave the placeholders if data.json is missing */ });
+</script>
