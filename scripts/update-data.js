@@ -1,8 +1,8 @@
 // ============================================================
-// update-data.js
+// update-data.js  (version 2 - matches the website's DATA format)
 // Fetches the latest fundraising total from People's Fundraising
-// and total miles from Strava, then saves both into data.json.
-// Runs automatically via GitHub Actions (see .github/workflows/).
+// and your runs from Strava, then saves both into data.json.
+// Runs automatically via GitHub Actions - NOT in the browser.
 // ============================================================
 
 // ------- SETTINGS YOU CAN CHANGE -------
@@ -10,11 +10,10 @@ const FUNDRAISING_URL =
   "https://www.peoplesfundraising.com/donation/in-it-for-the-long-run-";
 
 // Count Strava activities from this date onwards (YYYY-MM-DD).
-// Change this to the start date of your challenge.
-const START_DATE = "2026-01-01";
+// Set this to your training start date.
+const START_DATE = "2026-08-01";
 
-// Which activity types count towards the miles total.
-// Add "Walk" or "Ride" to the list if you want those included too,
+// Which activity types count. Add "Walk" or "Ride" if wanted,
 // e.g. ["Run", "Walk"]
 const ACTIVITY_TYPES = ["Run"];
 // ---------------------------------------
@@ -36,8 +35,6 @@ async function getFundraising() {
   if (!res.ok) throw new Error(`Fundraising page returned ${res.status}`);
   const html = await res.text();
 
-  // The total sits inside the "page-amount-and-supporters" box,
-  // e.g. <strong>&pound;137.50</strong> raised by <strong>1</strong> supporters
   const raisedMatch = html.match(
     /page-amount-and-supporters[\s\S]{0,800}?(?:&pound;|£)\s*([\d,]+(?:\.\d{1,2})?)/
   );
@@ -60,18 +57,17 @@ async function getFundraising() {
   };
 }
 
-// ---- Part 2: get miles from Strava ----
-async function getStravaMiles() {
+// ---- Part 2: get individual runs from Strava ----
+async function getStravaRuns() {
   const clientId = process.env.STRAVA_CLIENT_ID;
   const clientSecret = process.env.STRAVA_CLIENT_SECRET;
   const refreshToken = process.env.STRAVA_REFRESH_TOKEN;
 
   if (!clientId || !clientSecret || !refreshToken) {
-    console.log("Strava secrets not set yet - skipping the miles update.");
+    console.log("Strava secrets not set yet - skipping the runs update.");
     return null;
   }
 
-  // Swap our long-lived refresh token for a short-lived access token
   const tokenRes = await fetch("https://www.strava.com/oauth/token", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -87,10 +83,8 @@ async function getStravaMiles() {
 
   const after = Math.floor(new Date(START_DATE + "T00:00:00Z").getTime() / 1000);
   let page = 1;
-  let totalMeters = 0;
-  let activityCount = 0;
+  const runs = [];
 
-  // Fetch activities page by page (200 at a time) until there are no more
   while (true) {
     const actRes = await fetch(
       `https://www.strava.com/api/v3/athlete/activities?after=${after}&per_page=200&page=${page}`,
@@ -102,18 +96,19 @@ async function getStravaMiles() {
 
     for (const a of activities) {
       if (ACTIVITY_TYPES.includes(a.type)) {
-        totalMeters += a.distance;
-        activityCount++;
+        runs.push({
+          date: (a.start_date_local || a.start_date).slice(0, 10),
+          distanceM: Math.round(a.distance),
+          movingTimeS: a.moving_time,
+        });
       }
     }
     page++;
   }
 
-  return {
-    totalMiles: Math.round((totalMeters / 1609.344) * 10) / 10,
-    activityCount,
-    since: START_DATE,
-  };
+  // Oldest first - the same order the website expects
+  runs.sort((a, b) => a.date.localeCompare(b.date));
+  return runs;
 }
 
 // ---- Put it all together ----
@@ -129,18 +124,22 @@ async function main() {
   const fundraising = await getFundraising();
   console.log(`Fundraising total: £${fundraising.totalRaised}`);
 
-  let strava = null;
+  let runs = null;
   try {
-    strava = await getStravaMiles();
-    if (strava) console.log(`Strava: ${strava.totalMiles} miles from ${strava.activityCount} activities`);
+    runs = await getStravaRuns();
+    if (runs) {
+      const miles = runs.reduce((s, r) => s + r.distanceM, 0) / 1609.344;
+      console.log(`Strava: ${runs.length} runs, ${miles.toFixed(1)} miles`);
+    }
   } catch (err) {
-    console.error(`Strava update failed (keeping previous miles): ${err.message}`);
+    console.error(`Strava update failed (keeping previous runs): ${err.message}`);
   }
 
   const data = {
+    lastUpdated: new Date().toISOString().slice(0, 10),
+    raisedAmount: fundraising.totalRaised,
     fundraising,
-    strava: strava ?? previous.strava ?? null,
-    updatedAt: new Date().toISOString(),
+    runs: runs ?? previous.runs ?? [],
   };
 
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2) + "\n");
