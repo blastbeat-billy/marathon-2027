@@ -576,6 +576,18 @@ const DATA = {
 
 const METERS_PER_MILE = 1609.344;
 
+// Weeks run Monday to Sunday: anchor week 1 to the Monday on/before the training start
+function mondayAnchor(iso){
+  const d = new Date(iso + "T12:00:00");
+  const shift = (d.getDay() + 6) % 7; // Mon=0 ... Sun=6
+  d.setDate(d.getDate() - shift);
+  return d.toISOString().slice(0,10);
+}
+const WEEK_ANCHOR = mondayAnchor("2026-08-01");
+function weekOf(iso){
+  return Math.floor(daysBetween(WEEK_ANCHOR, iso) / 7) + 1;
+}
+
 const PHASES = [
   { name: "BUILDING A BASE",          from: 1,  to: 5,  cls: "phase-0" },
   { name: "AEROBIC BUILD",            from: 6,  to: 16, cls: "phase-1" },
@@ -752,9 +764,9 @@ function renderMoneyMarks(){
   document.getElementById('statRuns').textContent = DATA.runs.length;
 
   const totalBlockDays = daysBetween(DATA.trainingStart, DATA.marathonDate);
-  const totalWeeks = Math.ceil(totalBlockDays/7);
+  const totalWeeks = weekOf(DATA.marathonDate);
   const elapsedDays = Math.max(0, daysBetween(DATA.trainingStart, todayISO));
-  const currentWeek = Math.min(totalWeeks, Math.floor(elapsedDays/7) + 1);
+  const currentWeek = Math.min(totalWeeks, Math.max(1, weekOf(todayISO)));
   const pctThroughBlock = Math.min(100, Math.max(0,(elapsedDays/totalBlockDays)*100));
 
   document.getElementById('weekLabel').textContent = "Week " + currentWeek + " of " + totalWeeks;
@@ -770,7 +782,7 @@ function renderMoneyMarks(){
   } else {
     const weekMiles = {};
     DATA.runs.forEach(r=>{
-      const wk = Math.floor(daysBetween(DATA.trainingStart, r.date)/7) + 1;
+      const wk = weekOf(r.date);
       weekMiles[wk] = (weekMiles[wk]||0) + r.distanceM/METERS_PER_MILE;
     });
     const maxWeek = Math.max(...Object.keys(weekMiles).map(Number));
