@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-09-28",
+  "lastUpdated": "2026-09-29",
   "raisedAmount": 162.5,
   "fundraising": {
     "totalRaised": 162.5,
@@ -97,6 +97,11 @@
       "date": "2026-09-25",
       "distanceM": 4361,
       "movingTimeS": 2415
+    },
+    {
+      "date": "2026-09-29",
+      "distanceM": 4852,
+      "movingTimeS": 1928
     }
   ]
 }
