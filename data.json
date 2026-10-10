@@ -122,6 +122,11 @@
       "date": "2026-10-09",
       "distanceM": 5130,
       "movingTimeS": 1980
+    },
+    {
+      "date": "2026-10-10",
+      "distanceM": 14266,
+      "movingTimeS": 5981
     }
   ]
 }
